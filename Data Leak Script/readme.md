@@ -21,30 +21,38 @@ Algoritmul folosește un prag stabil de **$\tau = 0.9$** pentru a grupa imaginil
 - **Date de intrare:** Dataset $\mathcal{D} = \{I_i\}_{i=1}^N$
 - **Date de ieșire:** Dicționar de trăsături $\mathcal{F} = \{I_i \mapsto \mathbf{f}_i\}$
 
-> 1. $\mathcal{F} \leftarrow \emptyset$
-> 2. Pentru fiecare imagine $I_i \in \mathcal{D}$:
-> 3. &nbsp;&nbsp;&nbsp;&nbsp;$\mathbf{f}_i \leftarrow \text{ResNet18}(I_i)$ _(vector $\in \mathbb{R}^{512}$)_
-> 4. &nbsp;&nbsp;&nbsp;&nbsp;$\mathcal{F} \leftarrow \mathcal{F} \cup \{I_i \mapsto \mathbf{f}_i\}$
-> 5. Returnează $\mathcal{F}$
+$$
+\begin{aligned}
+&1. \ \mathcal{F} \leftarrow \emptyset \\
+&2. \ \text{Pentru fiecare imagine } I_i \in \mathcal{D}: \\
+&3. \quad \mathbf{f}_i \leftarrow \text{ResNet18}(I_i) \ (\text{vector } \in \mathbb{R}^{512}) \\
+&4. \quad \mathcal{F} \leftarrow \mathcal{F} \cup \{I_i \mapsto \mathbf{f}_i\} \\
+&5. \ \text{Returnează } \mathcal{F}
+\end{aligned}
+$$
 
 #### Algoritmul 2: Grupare cu reprezentanți a imaginilor similare
 
 - **Date de intrare:** Dicționar de trăsături $\mathcal{F} = \{I_i \mapsto \mathbf{f}_i\}$, prag $\tau = 0.9$
 - **Date de ieșire:** Grupuri finale $\mathcal{G} = \{\mathcal{G}_1, \dots, \mathcal{G}_K\}$
 
-> 1. $R \leftarrow \emptyset$, $\mathcal{G} \leftarrow \emptyset$
-> 2. Pentru fiecare imagine $I_i \in \mathcal{D}$:
-> 3. &nbsp;&nbsp;&nbsp;&nbsp;$asignat \leftarrow \text{Fals}$
-> 4. &nbsp;&nbsp;&nbsp;&nbsp;Pentru fiecare reprezentant $R_k \in R$:
-> 5. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$sim \leftarrow \frac{\mathbf{f}_i \cdot \mathbf{f}_{R_k}}{\|\mathbf{f}_i\|\,\|\mathbf{f}_{R_k}\|}$
-> 6. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Dacă $sim \ge \tau$ atunci:
-> 7. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$\mathcal{G}_k \leftarrow \mathcal{G}_k \cup \{I_i\}$
-> 8. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$asignat \leftarrow \text{Adevărat}$
-> 9. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**break**
-> 10. &nbsp;&nbsp;&nbsp;&nbsp;Dacă **nu** $asignat$ atunci:
-> 11. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$R \leftarrow R \cup \{I_i\}$
-> 12. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$\mathcal{G} \leftarrow \mathcal{G} \cup \{\{I_i\}\}$
-> 13. Returnează $\mathcal{G}$
+$$
+\begin{aligned}
+&1. \ R \leftarrow \emptyset, \ \mathcal{G} \leftarrow \emptyset \\
+&2. \ \text{Pentru fiecare imagine } I_i \in \mathcal{D}: \\
+&3. \quad asignat \leftarrow \text{Fals} \\
+&4. \quad \text{Pentru fiecare reprezentant } R_k \in R: \\
+&5. \qquad sim \leftarrow \frac{\mathbf{f}_i \cdot \mathbf{f}_{R_k}}{\|\mathbf{f}_i\|\,\|\mathbf{f}_{R_k}\|} \\
+&6. \qquad \text{Dacă } sim \ge \tau \text{ atunci:} \\
+&7. \quad \qquad \mathcal{G}_k \leftarrow \mathcal{G}_k \cup \{I_i\} \\
+&8. \quad \qquad asignat \leftarrow \text{Adevărat} \\
+&9. \quad \qquad \textbf{break} \\
+&10. \ \text{Dacă \textbf{nu} } asignat \text{ atunci:} \\
+&11. \quad \ R \leftarrow R \cup \{I_i\} \\
+&12. \quad \ \mathcal{G} \leftarrow \mathcal{G} \cup \{\{I_i\}\} \\
+&13. \text{Returnează } \mathcal{G}
+\end{aligned}
+$$
 
 ---
 
