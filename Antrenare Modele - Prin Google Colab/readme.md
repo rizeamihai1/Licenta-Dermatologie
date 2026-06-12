@@ -33,7 +33,7 @@ Configurația câștigătoare pe setul de validare combină antrenamentul multi-
 
 ## 2. Modelul de Clasificare: EfficientNet-B0
 
-Pentru etapa de clasificare a leziunilor, a fost utilizată arhitectura **EfficientNet-B0** ($\approx 4$M parametri). Pregătirea datelor, mai exact extragerea bounding box-urilor (ferestrelor) necesare pentru antrenarea acestui model, se realizează folosind scriptul `Extragere Bounding Boxes/script_extragere_bb_224.py`.
+Pentru etapa de clasificare a leziunilor, a fost utilizată arhitectura **EfficientNet-B0** Pregătirea datelor, mai exact extragerea bounding box-urilor (ferestrelor) necesare pentru antrenarea acestui model, se realizează folosind scriptul `Extragere Bounding Boxes/script_extragere_bb_224.py`.
 
 ### Detalii de Antrenare și Augmentare
 
