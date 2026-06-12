@@ -10,6 +10,9 @@ Procesul de augmentare se desfășoară în două etape vizuale principale, ilus
 
 ### 1. Extragerea Feței (Masca Binară)
 
+Utilizarea spațiului de culoare YCrCb în defavoarea formatului standard BGR este motivată de robustețea acestuia la variațiile de iluminare și la diversitatea fototipurilor umane. În spațiul YCrCb, informația de intensitate luminoasă (canalul Y) este decuplată de informația de culoare (canalele de crominanță Cr și Cb). După cum se poate observa în figura: `poze_fete.png`, deși cei trei subiecți prezintă fototipuri distincte ale pielii, distribuția valorilor în canalele Cr și Cb rămâne relativ constantă (invariantă).
+![ArgumnetYCrCb](imagini/poze_fete.png)
+
 În prima fază, este esențial să identificăm exact unde este pielea feței:
 
 - **Imagini de referință:** `Poza 1 masca faciala.png` și `Poza 2 masca faciala.png`
