@@ -67,7 +67,7 @@ La momentul inferenței, detecțiile sunt filtrate pe baza a doi parametri criti
 Cei doi parametri au fost optimizați independent pentru fiecare model printr-o căutare exhaustivă (Grid Search) pe $9 \times 9 = 81$ de configurații, realizată exclusiv pe setul de validare:
 
 - $\texttt{conf} \in \{0.01, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40\}$
-- $\texttt{iou\_NMS} \in \{0.10, 0.20, 0.30, 0.40, 0.45, 0.50, 0.55, 0.60, 0.70\}$
+- $\texttt{iou} \in \{0.10, 0.20, 0.30, 0.40, 0.45, 0.50, 0.55, 0.60, 0.70\}$
 
 Criteriul de selecție a fost maximizarea mediei armonice $F_1$, o metrică potrivită pentru stabilirea unui punct de operare fix, deoarece echilibrează precizia și recall-ul:
 
