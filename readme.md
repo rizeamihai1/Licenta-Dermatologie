@@ -24,3 +24,40 @@ Soluția este modularizată în patru componente principale, fiecare având prop
 2. **Augmentarea:** Echilibrarea setului de antrenare prin inserarea inteligentă a leziunilor subreprezentate.
 3. **Detecția:** Antrenarea modelului YOLOv8m pentru a localiza leziunile pe întreaga imagine facială.
 4. **Clasificarea:** Extragerea detecțiilor și trecerea lor prin modelul EfficientNet-B0 pentru o clasificare precisă a tipului de leziune.
+
+### Exemple de Leziuni
+
+| ![Comedo 0](imagini%20aplicatie/exemple%20leziuni/comedo%200.png) | ![Comedo 1](imagini%20aplicatie/exemple%20leziuni/comedo%201.png) |   ![Nodul](imagini%20aplicatie/exemple%20leziuni/nodul.png)   |
+| :---------------------------------------------------------------: | :---------------------------------------------------------------: | :-----------------------------------------------------------: |
+|  ![Nodul 2](imagini%20aplicatie/exemple%20leziuni/nodul%202.png)  |    ![Papule](imagini%20aplicatie/exemple%20leziuni/papule.png)    | ![Pustule](imagini%20aplicatie/exemple%20leziuni/pustule.png) |
+
+### Exemple de Adnotari
+
+### Adnotări
+
+![Adnotare 1](imagini%20aplicatie/adnotare-1.png)
+
+![Adnotare 2](imagini%20aplicatie/adnotare-2.png)
+
+## Aplicatia Django se regaseste alaturi de modelele YOLO Multiclass + Sistemul Secvential compus din YOLO Singleclass si EfficientNet-B0 in `Aplicatie Django / acne_demo / models_dir `
+
+## Rezultate și Detecții
+
+### Comparație Detecții vs. Ground Truth (GT)
+
+Detectii imagine 1:
+![1 Detectii](imagini%20aplicatie/1%20detectii.png)
+Groud Truth 1:
+![1 GT](imagini%20aplicatie/1%20GT.png)
+
+Detectii imagine 2:
+![2 Detectii](imagini%20aplicatie/2%20detectii.png)
+Ground Truth 2:
+![2 GT](imagini%20aplicatie/2%20GT.png)
+
+---
+
+### Exemple Suplimentare
+
+| ![Exemple detectii 1](imagini%20aplicatie/Exemple%20detectii%20v2.png) | ![Exemple detectii 2](imagini%20aplicatie/Exemple%20detectii%202%20v2.png) |
+| :--------------------------------------------------------------------: | :------------------------------------------------------------------------: |
