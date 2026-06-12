@@ -16,7 +16,7 @@ Algoritmul folosește un prag stabil de **$\tau = 0.9$** pentru a grupa imaginil
 
 ### Algoritmii folositi:
 
-#### 🔹 Algoritmul 1: Extragerea vectorilor de trăsături cu ResNet18
+#### Algoritmul 1: Extragerea vectorilor de trăsături cu ResNet18
 
 - **Date de intrare:** Dataset $\mathcal{D} = \{I_i\}_{i=1}^N$
 - **Date de ieșire:** Dicționar de trăsături $\mathcal{F} = \{I_i \mapsto \mathbf{f}_i\}$
@@ -27,7 +27,7 @@ Algoritmul folosește un prag stabil de **$\tau = 0.9$** pentru a grupa imaginil
 > 4. &nbsp;&nbsp;&nbsp;&nbsp;$\mathcal{F} \leftarrow \mathcal{F} \cup \{I_i \mapsto \mathbf{f}_i\}$
 > 5. Returnează $\mathcal{F}$
 
-#### 🔹 Algoritmul 2: Grupare cu reprezentanți a imaginilor similare
+#### Algoritmul 2: Grupare cu reprezentanți a imaginilor similare
 
 - **Date de intrare:** Dicționar de trăsături $\mathcal{F} = \{I_i \mapsto \mathbf{f}_i\}$, prag $\tau = 0.9$
 - **Date de ieșire:** Grupuri finale $\mathcal{G} = \{\mathcal{G}_1, \dots, \mathcal{G}_K\}$
