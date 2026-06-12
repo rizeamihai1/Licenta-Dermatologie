@@ -21,7 +21,7 @@ Procesul de augmentare se desfășoară în două etape vizuale principale, ilus
 
 ### 2. Adăugarea Inteligentă a Leziunilor (Patch-uri)
 
-Odată masca definită, urmează integrarea noilor leziuni, ținând cont de anatomia existentă.
+Odată masca definită, urmează integrarea noilor leziuni, ținând cont de anatomia existentă. Leziunile au fost extrase folosind scriptul `Extragere Bounding Boxes/extragere_bb.py`
 
 - **Imagini de referință:** `Poza 1 masca faciala + adaugare patch.png` și `Poza 2 masca faciala + adaugare patch.png`
   ![Masca Faciala Augmentata1](imagini/Poza%201%20masca%20faciala%20+%20adaugare%20patch.png)
