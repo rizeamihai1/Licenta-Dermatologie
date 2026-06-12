@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AcneVision — Detecție și Clasificare Leziuni Acneice</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg:        #0d0f14;
+    --surface:   #161923;
+    --border:    #252b38;
+    --text:      #e8eaf0;
+    --muted:     #6b7488;
+    --comedo:    #f59e0b;
+    --papula:    #22c55e;
+    --pustula:   #ef4444;
+    --nodul:     #a855f7;
+    --accent:    #3b82f6;
+    --accent-dim:#1d3a6e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+  }
+
+  /* ── header ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  header .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  header .subtitle {
+    color: var(--muted);
+    font-size: .85rem;
+  }
+
+  /* ── layout ── */
+  .app {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    height: calc(100vh - 57px);
+  }
+
+  /* ── panou stânga: controale ── */
+  .panel {
+    border-right: 1px solid var(--border);
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: .7rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: .75rem;
+  }
+
+  /* ── upload zone ── */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    position: relative;
+  }
+  .upload-zone:hover,
+  .upload-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(59,130,246,.06);
+  }
+  .upload-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .upload-icon { font-size: 2rem; margin-bottom: .5rem; }
+  .upload-zone p { color: var(--muted); font-size: .9rem; }
+  .upload-zone .hint { font-size: .75rem; color: var(--muted); margin-top: .25rem; }
+  #file-name {
+    margin-top: .75rem;
+    font-size: .8rem;
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    word-break: break-all;
+    display: none;
+  }
+
+  /* ── preview miniatură ── */
+  #preview-thumb {
+    width: 100%;
+    border-radius: 8px;
+    display: none;
+    object-fit: contain;
+    max-height: 180px;
+    background: #0a0c10;
+  }
+
+  /* ── toggle model ── */
+  .model-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .5rem;
+  }
+  .model-btn {
+    padding: .6rem .5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: .8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .15s;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .model-btn.active {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    color: var(--text);
+  }
+
+  /* ── slidere ── */
+  .slider-group { display: flex; flex-direction: column; gap: .4rem; }
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+  }
+  .slider-row label {
+    font-size: .8rem;
+    color: var(--muted);
+    min-width: 80px;
+    font-family: 'Space Mono', monospace;
+  }
+  .slider-row input[type=range] {
+    flex: 1;
+    appearance: none;
+    height: 4px;
+    border-radius: 4px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+  .slider-row input[type=range]::-webkit-slider-thumb {
+    appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+  .slider-val {
+    font-family: 'Space Mono', monospace;
+    font-size: .8rem;
+    color: var(--text);
+    min-width: 36px;
+    text-align: right;
+  }
+
+  /* ── buton analizează ── */
+  #btn-analyze {
+    width: 100%;
+    padding: .85rem;
+    border-radius: 10px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+  }
+  #btn-analyze:hover { opacity: .9; }
+  #btn-analyze:active { transform: scale(.98); }
+  #btn-analyze:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* spinner */
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── zona dreapta: rezultate ── */
+  .results-area {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    overflow: hidden;
+  }
+
+  .image-view {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #090b10;
+    overflow: hidden;
+  }
+  .image-view img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: none;
+  }
+  .placeholder {
+    text-align: center;
+    color: var(--muted);
+  }
+  .placeholder .big-icon { font-size: 3rem; margin-bottom: 1rem; opacity: .3; }
+  .placeholder p { font-size: .9rem; }
+
+  /* badge model activ pe imagine */
+  #mode-badge {
+    position: absolute;
+    top: 1rem; left: 1rem;
+    background: rgba(0,0,0,.7);
+    border: 1px solid var(--border);
+    padding: .3rem .75rem;
+    border-radius: 20px;
+    font-family: 'Space Mono', monospace;
+    font-size: .7rem;
+    color: var(--accent);
+    backdrop-filter: blur(4px);
+    display: none;
+  }
+
+  /* ── toggle straturi (detectii / ground truth) ── */
+  #gt-toggle {
+    position: absolute;
+    bottom: 1rem; left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    flex-direction: row;
+    align-items: center;
+    gap: .6rem;
+    z-index: 5;
+  }
+  .layer-btns { display: flex; gap: .4rem; }
+  .layer-btn {
+    background: rgba(0,0,0,.7);
+    border: 1px solid var(--border);
+    padding: .35rem .85rem;
+    border-radius: 20px;
+    font-family: 'Space Mono', monospace;
+    font-size: .72rem;
+    color: var(--text);
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: all .15s;
+  }
+  .layer-btn:hover { border-color: var(--accent); }
+  .layer-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .layer-btn.disabled { opacity: .35; cursor: not-allowed; }
+  .layer-btn.disabled:hover { border-color: var(--border); }
+  .gt-legend {
+    display: flex;
+    gap: .75rem;
+    background: rgba(0,0,0,.7);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .3rem .6rem;
+    font-size: .65rem;
+    color: var(--muted);
+    backdrop-filter: blur(4px);
+  }
+  .gt-legend span { display: inline-flex; align-items: center; gap: .35rem; }
+  .gt-lg { display: inline-block; width: 16px; height: 0; }
+  .gt-lg.solid  { border-top: 2px solid #fff; }
+  .gt-lg.dashed { border-top: 2px dashed #fff; }
+
+  /* ── panoul de rezultate jos ── */
+  .results-panel {
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+  }
+
+  .results-inner {
+    display: grid;
+    grid-template-columns: 0.8fr 1fr 1fr 1.1fr;
+  }
+
+  .res-section {
+    padding: 1rem 1.25rem;
+    border-right: 1px solid var(--border);
+  }
+  .res-section:last-child { border-right: none; }
+
+  /* ── IGA ── */
+  .iga-score-big {
+    font-family: 'Space Mono', monospace;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+  .iga-severity {
+    font-size: .8rem;
+    color: var(--muted);
+    margin-top: .25rem;
+    margin-bottom: .75rem;
+  }
+  .iga-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+  }
+  .iga-row {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .8rem;
+  }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .iga-row .formula { color: var(--muted); margin-left: auto; font-family: 'Space Mono', monospace; font-size: .75rem; }
+
+  /* ── tabel detecții ── */
+  .det-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .8rem;
+  }
+  .det-table th {
+    font-family: 'Space Mono', monospace;
+    font-size: .65rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: .3rem .5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .det-table td {
+    padding: .35rem .5rem;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+  }
+  .det-table tr:last-child td { border-bottom: none; }
+
+  .badge {
+    display: inline-block;
+    padding: .15rem .55rem;
+    border-radius: 20px;
+    font-size: .72rem;
+    font-weight: 600;
+    color: #fff;
+  }
+  .badge-comedo  { background: var(--comedo);  color: #000; }
+  .badge-papula  { background: var(--papula);  color: #000; }
+  .badge-pustula { background: var(--pustula); }
+  .badge-nodul   { background: var(--nodul);   }
+
+  /* ── stats summar ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .6rem;
+  }
+  .stat-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .6rem .75rem;
+  }
+  .stat-card .val {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+  }
+  .stat-card .lbl { font-size: .72rem; color: var(--muted); }
+
+  /* ── eroare ── */
+  #error-msg {
+    display: none;
+    margin-top: .75rem;
+    padding: .6rem .9rem;
+    background: rgba(239,68,68,.1);
+    border: 1px solid rgba(239,68,68,.3);
+    border-radius: 8px;
+    color: #fca5a5;
+    font-size: .85rem;
+  }
+
+  /* ── buton comparatie (full-width sub toggle) ── */
+  .compare-btn {
+    width: 100%;
+    margin-top: .5rem;
+  }
+  .compare-btn small { color: var(--muted); }
+  .compare-btn.active small { color: var(--text); opacity: .8; }
+
+  /* ── toggle TTA ── */
+  .tta-row {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    cursor: pointer;
+    font-size: .85rem;
+    color: var(--text);
+  }
+  .tta-row input {
+    width: 16px; height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .tta-hint { color: var(--muted); font-size: .72rem; margin-top: .35rem; }
+
+  /* ── grafice canvas ── */
+  .chart-canvas {
+    width: 100%;
+    height: 150px;
+    display: block;
+  }
+
+  /* ── statistici detaliate (rânduri) ── */
+  .stat-rows {
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+  }
+  .stat-line {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-size: .82rem;
+    padding-bottom: .35rem;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+  }
+  .stat-line:last-child { border-bottom: none; }
+  .stat-line .k { color: var(--muted); }
+  .stat-line .v {
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  /* ── mod comparatie: doua imagini ── */
+  #compare-view {
+    display: none;
+    width: 100%;
+    height: 100%;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+  }
+  .compare-pane {
+    display: flex;
+    flex-direction: column;
+    background: #090b10;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .compare-pane-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .5rem .9rem;
+    font-family: 'Space Mono', monospace;
+    font-size: .72rem;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,.4);
+  }
+  .compare-pane:last-child .compare-pane-label { color: #f59e0b; }
+  .compare-count {
+    color: var(--text);
+    background: var(--surface);
+    border-radius: 20px;
+    padding: .1rem .55rem;
+    font-size: .68rem;
+  }
+  .compare-img-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: .5rem;
+  }
+  .compare-img-wrap img {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  /* ── panou rezultate comparatie ── */
+  #compare-panel { display: none; }
+  .compare-results-inner {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1.3fr;
+  }
+  .cmp-iga-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .cmp-iga-name {
+    font-family: 'Space Mono', monospace;
+    font-size: .7rem;
+    color: var(--muted);
+    margin-bottom: .25rem;
+  }
+  .cmp-iga-grid > div:first-child .iga-score-big { color: var(--accent); }
+  .cmp-iga-grid > div:last-child  .iga-score-big { color: #f59e0b; }
+  .cmp-legend {
+    display: flex;
+    gap: 1rem;
+    margin-top: .4rem;
+    font-size: .72rem;
+    color: var(--muted);
+  }
+  .cmp-legend .lg-box {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    margin-right: .35rem;
+    vertical-align: middle;
+  }
+  .cmp-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+  .cmp-table th {
+    font-family: 'Space Mono', monospace;
+    font-size: .65rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted); padding: .3rem .5rem; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .cmp-table td {
+    padding: .35rem .5rem;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+    font-family: 'Space Mono', monospace;
+  }
+  .cmp-table tr:last-child td { border-bottom: none; }
+  .cmp-table .delta-pos { color: #f59e0b; }
+  .cmp-table .delta-neg { color: var(--accent); }
+  .cmp-table .delta-zero { color: var(--muted); }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">AcneVision</div>
+    <div class="subtitle">Detecție și clasificare leziuni acneice — Lucrare de licență</div>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- ── panou stânga ── -->
+  <aside class="panel">
+
+    <!-- upload -->
+    <div>
+      <div class="section-label">Imagine</div>
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/bmp">
+        <div class="upload-icon">🔬</div>
+        <p>Trage imaginea aici sau click pentru upload</p>
+        <p class="hint">JPG, PNG, WEBP, BMP · max 20MB</p>
+      </div>
+      <div id="file-name"></div>
+      <img id="preview-thumb" alt="preview">
+      <div id="error-msg"></div>
+    </div>
+
+    <!-- model toggle -->
+    <div>
+      <div class="section-label">Model</div>
+      <div class="model-toggle">
+        <button class="model-btn active" data-mode="multiclass">
+          YOLO Multiclass<br><small>cls_pw = 0.5</small>
+        </button>
+        <button class="model-btn" data-mode="pipeline">
+          Pipeline Hibrid<br><small>YOLO + EfficientNet-B0</small>
+        </button>
+      </div>
+      <button class="model-btn compare-btn" data-mode="compare">
+        ⚖ Comparație directă<br><small>ambele modele · aceeași imagine</small>
+      </button>
+    </div>
+
+    <!-- slidere -->
+    <div id="params-section">
+      <div class="section-label">Parametri inferență</div>
+      <div class="slider-group">
+        <div class="slider-row">
+          <label>conf</label>
+          <input type="range" id="sl-conf" min="0.01" max="0.50" step="0.01" value="0.10">
+          <span class="slider-val" id="val-conf">0.10</span>
+        </div>
+        <div class="slider-row">
+          <label>iou NMS</label>
+          <input type="range" id="sl-iou" min="0.10" max="0.80" step="0.05" value="0.40">
+          <span class="slider-val" id="val-iou">0.40</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- nota mod comparatie (ascunsa implicit) -->
+    <div id="compare-note" style="display:none">
+      <div class="section-label">Mod comparație</div>
+      <p style="color:var(--muted);font-size:.8rem;line-height:1.5">
+        Fiecare model rulează cu pragurile sale optime
+        (<span style="font-family:'Space Mono',monospace">MC conf 0.10</span> ·
+        <span style="font-family:'Space Mono',monospace">PL conf 0.15</span>)
+        pentru o comparație corectă.
+      </p>
+    </div>
+
+    <!-- toggle TTA (valabil in toate modurile) -->
+    <div id="tta-section">
+      <div class="section-label">Augmentare (TTA)</div>
+      <label class="tta-row">
+        <input type="checkbox" id="tta-check">
+        <span>augment — identic cu lucrarea</span>
+      </label>
+      <p class="tta-hint">Mai precis (ca în experimente), dar de ~2–4× mai lent.</p>
+    </div>
+
+    <!-- buton -->
+    <button id="btn-analyze" disabled>
+      <span class="spinner" id="spinner"></span>
+      <span id="btn-text">Selectează o imagine</span>
+    </button>
+
+  </aside>
+
+  <!-- ── zona dreapta ── -->
+  <main class="results-area">
+
+    <div class="image-view" id="image-view">
+      <div class="placeholder" id="placeholder">
+        <div class="big-icon">🧬</div>
+        <p>Încarcă o imagine pentru a porni analiza</p>
+      </div>
+
+      <!-- mod single: o singura imagine -->
+      <img id="result-img" alt="Rezultat analiză">
+      <div id="mode-badge"></div>
+
+      <!-- toggle straturi: detectii (predictii) si ground truth, independent -->
+      <div id="gt-toggle">
+        <div class="layer-btns">
+          <button id="pred-btn" class="layer-btn active">Detecții</button>
+          <button id="gt-btn" class="layer-btn">Ground truth</button>
+        </div>
+        <div class="gt-legend">
+          <span><span class="gt-lg solid"></span>predicție</span>
+          <span><span class="gt-lg dashed"></span>ground truth</span>
+        </div>
+      </div>
+
+      <!-- mod comparatie: doua imagini side-by-side -->
+      <div id="compare-view">
+        <div class="compare-pane">
+          <div class="compare-pane-label">
+            <span>YOLO Multiclass</span>
+            <span class="compare-count" id="cmp-count-mc">—</span>
+          </div>
+          <div class="compare-img-wrap"><img id="cmp-img-mc" alt="Multiclass"></div>
+        </div>
+        <div class="compare-pane">
+          <div class="compare-pane-label">
+            <span>Pipeline Hibrid</span>
+            <span class="compare-count" id="cmp-count-pl">—</span>
+          </div>
+          <div class="compare-img-wrap"><img id="cmp-img-pl" alt="Pipeline"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── panou rezultate: mod SINGLE ── -->
+    <div class="results-panel" id="results-panel">
+      <div class="results-inner">
+
+        <!-- coloana 1: IGA -->
+        <div class="res-section">
+          <div class="section-label">Scor IGA</div>
+          <div class="iga-score-big" id="iga-score">—</div>
+          <div class="iga-severity" id="iga-severity"></div>
+          <div class="iga-breakdown" id="iga-breakdown"></div>
+        </div>
+
+        <!-- coloana 2: distribuție (histogramă) -->
+        <div class="res-section">
+          <div class="section-label">Distribuție pe clase</div>
+          <canvas id="hist-canvas" class="chart-canvas"></canvas>
+        </div>
+
+        <!-- coloana 3: statistici detaliate -->
+        <div class="res-section">
+          <div class="section-label">Statistici detaliate</div>
+          <div class="stat-rows" id="stat-rows"></div>
+        </div>
+
+        <!-- coloana 4: tabel detecții -->
+        <div class="res-section">
+          <div class="section-label">Detecții individuale</div>
+          <div id="det-table-wrap"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── panou rezultate: mod COMPARAȚIE ── -->
+    <div class="results-panel" id="compare-panel">
+      <div class="compare-results-inner">
+
+        <!-- IGA side-by-side -->
+        <div class="res-section">
+          <div class="section-label">Scor IGA — comparație</div>
+          <div class="cmp-iga-grid">
+            <div>
+              <div class="cmp-iga-name">Multiclass</div>
+              <div class="iga-score-big" id="cmp-iga-mc">—</div>
+              <div class="iga-severity" id="cmp-sev-mc"></div>
+            </div>
+            <div>
+              <div class="cmp-iga-name">Pipeline</div>
+              <div class="iga-score-big" id="cmp-iga-pl">—</div>
+              <div class="iga-severity" id="cmp-sev-pl"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- grafic grupat MC vs PL pe clase -->
+        <div class="res-section">
+          <div class="section-label">Detecții pe clasă — MC vs PL</div>
+          <canvas id="cmp-canvas" class="chart-canvas"></canvas>
+          <div class="cmp-legend">
+            <span><span class="lg-box" style="background:var(--accent)"></span>Multiclass</span>
+            <span><span class="lg-box" style="background:#f59e0b"></span>Pipeline</span>
+          </div>
+        </div>
+
+        <!-- tabel comparativ -->
+        <div class="res-section">
+          <div class="section-label">Tabel comparativ</div>
+          <div id="cmp-table-wrap"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── constante ──────────────────────────────────────────────────────────────
+const IGA_WEIGHTS  = {comedo:1, papula:2, pustula:3, nodul:4};
+const CLASS_COLORS = {comedo:'#f59e0b', papula:'#22c55e', pustula:'#ef4444', nodul:'#a855f7'};
+const DEFAULT_CONF = {multiclass: '0.10', pipeline: '0.15'};
+const DEFAULT_IOU  = {multiclass: '0.40', pipeline: '0.45'};
+
+// ── referințe DOM ──────────────────────────────────────────────────────────
+const uploadZone   = document.getElementById('upload-zone');
+const fileInput    = document.getElementById('file-input');
+const fileName     = document.getElementById('file-name');
+const previewThumb = document.getElementById('preview-thumb');
+const errorMsg     = document.getElementById('error-msg');
+const modelBtns    = document.querySelectorAll('.model-btn');
+const slConf       = document.getElementById('sl-conf');
+const slIou        = document.getElementById('sl-iou');
+const valConf      = document.getElementById('val-conf');
+const valIou       = document.getElementById('val-iou');
+const ttaCheck     = document.getElementById('tta-check');
+const btnAnalyze   = document.getElementById('btn-analyze');
+const btnText      = document.getElementById('btn-text');
+const spinner      = document.getElementById('spinner');
+const placeholder  = document.getElementById('placeholder');
+const resultImg    = document.getElementById('result-img');
+const modeBadge    = document.getElementById('mode-badge');
+const gtToggle     = document.getElementById('gt-toggle');
+const predBtn      = document.getElementById('pred-btn');
+const gtBtn        = document.getElementById('gt-btn');
+const resultsPanel = document.getElementById('results-panel');
+const igaScore     = document.getElementById('iga-score');
+const igaSeverity  = document.getElementById('iga-severity');
+const igaBreakdown = document.getElementById('iga-breakdown');
+const histCanvas   = document.getElementById('hist-canvas');
+const statRows     = document.getElementById('stat-rows');
+const detTableWrap = document.getElementById('det-table-wrap');
+const paramsSection = document.getElementById('params-section');
+const compareNote  = document.getElementById('compare-note');
+
+// elemente mod comparatie
+const compareView  = document.getElementById('compare-view');
+const comparePanel = document.getElementById('compare-panel');
+const cmpImgMc     = document.getElementById('cmp-img-mc');
+const cmpImgPl     = document.getElementById('cmp-img-pl');
+const cmpCountMc   = document.getElementById('cmp-count-mc');
+const cmpCountPl   = document.getElementById('cmp-count-pl');
+const cmpIgaMc     = document.getElementById('cmp-iga-mc');
+const cmpIgaPl     = document.getElementById('cmp-iga-pl');
+const cmpSevMc     = document.getElementById('cmp-sev-mc');
+const cmpSevPl     = document.getElementById('cmp-sev-pl');
+const cmpCanvas    = document.getElementById('cmp-canvas');
+const cmpTableWrap = document.getElementById('cmp-table-wrap');
+
+// ── stare ──────────────────────────────────────────────────────────────────
+const CLASSES = ['comedo', 'papula', 'pustula', 'nodul'];
+let currentMode = 'multiclass';
+let selectedFile = null;
+let lastSingleData = null;   // pentru re-desenarea histogramei la resize
+let lastCompareData = null;
+let showPred = true;         // stratul cu detectiile modelului
+let showGt   = false;        // stratul cu ground truth
+
+// ── drag & drop ────────────────────────────────────────────────────────────
+uploadZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  uploadZone.classList.add('dragover');
+});
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) handleFile(fileInput.files[0]);
+});
+
+function handleFile(file) {
+  hideError();
+  selectedFile = file;
+  fileName.textContent = file.name;
+  fileName.style.display = 'block';
+
+  // preview miniatură
+  const reader = new FileReader();
+  reader.onload = e => {
+    previewThumb.src = e.target.result;
+    previewThumb.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+
+  btnAnalyze.disabled = false;
+  btnText.textContent = 'Analizează';
+}
+
+// ── toggle model ───────────────────────────────────────────────────────────
+modelBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    modelBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMode = btn.dataset.mode;
+
+    if (currentMode === 'compare') {
+      // mod comparatie: ascunde sliderele, arata nota
+      paramsSection.style.display = 'none';
+      compareNote.style.display = 'block';
+    } else {
+      paramsSection.style.display = 'block';
+      compareNote.style.display = 'none';
+      slConf.value = DEFAULT_CONF[currentMode];
+      valConf.textContent = DEFAULT_CONF[currentMode];
+      slIou.value  = DEFAULT_IOU[currentMode];
+      valIou.textContent  = DEFAULT_IOU[currentMode];
+    }
+
+    // re-ruleaza automat daca exista deja un rezultat afisat
+    if (selectedFile && (lastSingleData || lastCompareData)) {
+      triggerAnalyze();
+    }
+  });
+});
+
+// ── slidere cu debounce 600ms si auto-rerun ────────────────────────────────
+let debounceTimer = null;
+
+function onSliderChange() {
+  valConf.textContent = parseFloat(slConf.value).toFixed(2);
+  valIou.textContent  = parseFloat(slIou.value).toFixed(2);
+  if (selectedFile && currentMode !== 'compare' && lastSingleData) {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => triggerAnalyze(), 600);
+  }
+}
+
+slConf.addEventListener('input', onSliderChange);
+slIou.addEventListener('input',  onSliderChange);
+
+// ── toggle TTA: re-ruleaza automat daca exista deja un rezultat ─────────────
+ttaCheck.addEventListener('change', () => {
+  if (selectedFile && (lastSingleData || lastCompareData)) triggerAnalyze();
+});
+
+// ── functie centrala de analiza (apelata din buton, slider si toggle) ──────
+async function triggerAnalyze() {
+  if (!selectedFile) return;
+  if (currentMode === 'compare') return doCompare();
+
+  hideError();
+  setLoading(true);
+
+  const formData = new FormData();
+  formData.append('image', selectedFile);
+  formData.append('mode', currentMode);
+  formData.append('conf', slConf.value);
+  formData.append('iou',  slIou.value);
+  formData.append('tta',  ttaCheck.checked ? '1' : '0');
+
+  try {
+    const resp = await fetch('/analyze', { method: 'POST', body: formData });
+    const data = await resp.json();
+    if (!resp.ok || !data.success) {
+      showError(data.error || 'Eroare necunoscuta la server.');
+      return;
+    }
+    renderResults(data);
+  } catch (err) {
+    showError('Nu s-a putut contacta serverul. Verifica ca Django ruleaza.');
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ── comparatie directa (ruleaza ambele modele) ─────────────────────────────
+async function doCompare() {
+  hideError();
+  setLoading(true);
+
+  const formData = new FormData();
+  formData.append('image', selectedFile);
+  formData.append('tta', ttaCheck.checked ? '1' : '0');
+
+  try {
+    const resp = await fetch('/compare', { method: 'POST', body: formData });
+    const data = await resp.json();
+    if (!resp.ok || !data.success) {
+      showError(data.error || 'Eroare necunoscuta la server.');
+      return;
+    }
+    renderCompare(data);
+  } catch (err) {
+    showError('Nu s-a putut contacta serverul. Verifica ca Django ruleaza.');
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ── buton analizează ────────────────────────────────────────────────────────
+btnAnalyze.addEventListener('click', () => triggerAnalyze());
+
+// ── toggle straturi: detectii + ground truth (independent) ──────────────────
+function hasGt() {
+  return !!((lastSingleData && lastSingleData.has_gt) ||
+            (lastCompareData && lastCompareData.has_gt));
+}
+
+// alege imaginea corecta in functie de (showPred, showGt)
+function pickImage(src) {
+  // src = obiect cu image_b64 / image_raw_b64 / image_pred_gt_b64 (per model)
+  // gt_only e comun, luat din lastSingleData/lastCompareData
+  const gtData = lastSingleData || lastCompareData;
+  if (showPred && showGt && hasGt()) return src.image_pred_gt_b64;
+  if (!showPred && showGt && hasGt()) return gtData.image_gt_only_b64;
+  if (showPred) return src.image_b64;
+  return src.image_raw_b64;
+}
+
+function applyLayers() {
+  if (lastSingleData) {
+    resultImg.src = 'data:image/jpeg;base64,' + pickImage(lastSingleData);
+  } else if (lastCompareData) {
+    cmpImgMc.src = 'data:image/jpeg;base64,' + pickImage(lastCompareData.multiclass);
+    cmpImgPl.src = 'data:image/jpeg;base64,' + pickImage(lastCompareData.pipeline);
+  }
+}
+
+// configureaza butoanele de strat dupa fiecare analiza
+function setupLayerToggle(data) {
+  const gtAvail = !!data.has_gt;
+  if (!gtAvail) showGt = false;   // fara label, stratul GT ramane oprit
+  gtToggle.style.display = 'flex';
+  predBtn.classList.toggle('active', showPred);
+  gtBtn.classList.toggle('disabled', !gtAvail);
+  gtBtn.classList.toggle('active', showGt && gtAvail);
+  gtBtn.textContent = gtAvail ? `Ground truth (${data.n_gt})` : 'Ground truth (—)';
+}
+
+predBtn.addEventListener('click', () => {
+  showPred = !showPred;
+  predBtn.classList.toggle('active', showPred);
+  applyLayers();
+});
+
+gtBtn.addEventListener('click', () => {
+  if (!hasGt()) return;            // dezactivat daca nu exista label
+  showGt = !showGt;
+  gtBtn.classList.toggle('active', showGt);
+  applyLayers();
+});
+
+// ── render rezultate (mod single) ──────────────────────────────────────────
+function renderResults(data) {
+  lastSingleData = data;
+  lastCompareData = null;
+
+  // comuta UI pe mod single
+  placeholder.style.display = 'none';
+  compareView.style.display = 'none';
+  comparePanel.style.display = 'none';
+  resultImg.style.display = 'block';
+
+  // straturi (detectii / ground truth) — aplicam in functie de toggle-uri
+  modeBadge.textContent = data.mode;
+  modeBadge.style.display = 'block';
+  setupLayerToggle(data);
+  applyLayers();
+
+  // IGA
+  const iga = data.iga;
+  igaScore.textContent = iga.score;
+  igaSeverity.textContent = iga.severity;
+  igaBreakdown.innerHTML = iga.breakdown.map(b => `
+    <div class="iga-row">
+      <span class="dot" style="background:${CLASS_COLORS[b.class]}"></span>
+      <span>${b.class}</span>
+      <span class="formula">${b.count} × ${b.weight} = ${b.subtotal}</span>
+    </div>
+  `).join('');
+
+  // histogramă distribuție pe clase
+  const counts = {};
+  iga.breakdown.forEach(b => counts[b.class] = b.count);
+  drawHistogram(histCanvas, counts);
+
+  // statistici detaliate
+  renderStatRows(data.detections, data.n_det);
+
+  // tabel detecții (primele 50)
+  const dets = data.detections.slice(0, 50);
+  if (dets.length === 0) {
+    detTableWrap.innerHTML = '<p style="color:var(--muted);font-size:.85rem;padding:.5rem 0">Nicio leziune detectată cu parametrii curenți.</p>';
+  } else {
+    const isHybrid = currentMode === 'pipeline';
+    detTableWrap.innerHTML = `
+      <table class="det-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Clasă</th>
+            <th>Conf</th>
+            ${isHybrid ? '<th>Det</th><th>Cls</th>' : ''}
+          </tr>
+        </thead>
+        <tbody>
+          ${dets.map((d, i) => `
+            <tr>
+              <td style="color:var(--muted)">${i+1}</td>
+              <td><span class="badge badge-${d.class}">${d.class}</span></td>
+              <td style="font-family:'Space Mono',monospace">${d.confidence.toFixed(3)}</td>
+              ${isHybrid ? `
+                <td style="color:var(--muted);font-size:.72rem">${d.det_conf?.toFixed(2) ?? '—'}</td>
+                <td style="color:var(--muted);font-size:.72rem">${d.cls_conf?.toFixed(2) ?? '—'}</td>
+              ` : ''}
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      ${data.detections.length > 50 ? `<p style="color:var(--muted);font-size:.75rem;margin-top:.5rem">+${data.detections.length - 50} mai multe...</p>` : ''}
+    `;
+  }
+
+  resultsPanel.style.display = 'block';
+}
+
+// ── statistici detaliate pe baza confidenței ───────────────────────────────
+function renderStatRows(detections, nDet) {
+  const counts = {};
+  CLASSES.forEach(c => counts[c] = 0);
+  detections.forEach(d => counts[d.class]++);
+
+  let dominant = '—';
+  if (nDet > 0) {
+    dominant = CLASSES.reduce((a, b) => counts[b] > counts[a] ? b : a);
+  }
+
+  let mean = 0, median = 0, cMin = 0, cMax = 0;
+  if (nDet > 0) {
+    const confs = detections.map(d => d.confidence).sort((a, b) => a - b);
+    mean = confs.reduce((s, v) => s + v, 0) / confs.length;
+    cMin = confs[0];
+    cMax = confs[confs.length - 1];
+    const mid = Math.floor(confs.length / 2);
+    median = confs.length % 2 ? confs[mid] : (confs[mid - 1] + confs[mid]) / 2;
+  }
+
+  const fmt = v => nDet > 0 ? v.toFixed(3) : '—';
+  const rows = [
+    ['Total leziuni', nDet],
+    ['Confidență medie', fmt(mean)],
+    ['Mediană', fmt(median)],
+    ['Minim', fmt(cMin)],
+    ['Maxim', fmt(cMax)],
+    ['Clasă dominantă', dominant],
+  ];
+  statRows.innerHTML = rows.map(([k, v]) => {
+    const color = (k === 'Clasă dominantă' && CLASS_COLORS[v])
+      ? `style="color:${CLASS_COLORS[v]}"` : '';
+    return `<div class="stat-line"><span class="k">${k}</span><span class="v" ${color}>${v}</span></div>`;
+  }).join('');
+}
+
+// ── render comparatie (mod compare) ────────────────────────────────────────
+function renderCompare(data) {
+  lastCompareData = data;
+  lastSingleData = null;
+
+  // comuta UI pe mod comparatie
+  placeholder.style.display = 'none';
+  resultImg.style.display = 'none';
+  modeBadge.style.display = 'none';
+  resultsPanel.style.display = 'none';
+  compareView.style.display = 'grid';
+  comparePanel.style.display = 'block';
+
+  const mc = data.multiclass, pl = data.pipeline;
+
+  // straturi (detectii / ground truth) aplicate pe ambele panouri
+  setupLayerToggle(data);
+  applyLayers();
+  cmpCountMc.textContent = `${mc.n_det} det.`;
+  cmpCountPl.textContent = `${pl.n_det} det.`;
+
+  cmpIgaMc.textContent = mc.iga.score;
+  cmpIgaPl.textContent = pl.iga.score;
+  cmpSevMc.textContent = mc.iga.severity;
+  cmpSevPl.textContent = pl.iga.severity;
+
+  // counts per clasa
+  const cMc = {}, cPl = {};
+  CLASSES.forEach(c => { cMc[c] = 0; cPl[c] = 0; });
+  mc.iga.breakdown.forEach(b => cMc[b.class] = b.count);
+  pl.iga.breakdown.forEach(b => cPl[b.class] = b.count);
+
+  drawCompareChart(cmpCanvas, cMc, cPl);
+
+  // tabel comparativ
+  const rowHtml = (label, vMc, vPl) => {
+    const d = vPl - vMc;
+    const cls = d > 0 ? 'delta-pos' : d < 0 ? 'delta-neg' : 'delta-zero';
+    const sign = d > 0 ? '+' : '';
+    return `<tr>
+      <td>${label}</td>
+      <td style="color:var(--accent)">${vMc}</td>
+      <td style="color:#f59e0b">${vPl}</td>
+      <td class="${cls}">${sign}${d}</td>
+    </tr>`;
+  };
+  cmpTableWrap.innerHTML = `
+    <table class="cmp-table">
+      <thead><tr><th>Metrică</th><th>MC</th><th>PL</th><th>Δ</th></tr></thead>
+      <tbody>
+        ${CLASSES.map(c => rowHtml(c, cMc[c], cPl[c])).join('')}
+        ${rowHtml('Total', mc.n_det, pl.n_det)}
+        ${rowHtml('Scor IGA', mc.iga.score, pl.iga.score)}
+      </tbody>
+    </table>`;
+}
+
+// ── desenare grafice (Canvas API, fără dependențe) ─────────────────────────
+function setupCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const w = rect.width || 300, h = rect.height || 150;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  return { ctx, w, h };
+}
+
+function drawHistogram(canvas, counts) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const padB = 20, padT = 18, padX = 6;
+  const max = Math.max(1, ...CLASSES.map(c => counts[c]));
+  const n = CLASSES.length;
+  const slot = (w - padX * 2) / n;
+  const bw = slot * 0.6;
+
+  ctx.font = '10px "Space Mono", monospace';
+  ctx.textAlign = 'center';
+
+  CLASSES.forEach((c, i) => {
+    const val = counts[c];
+    const x = padX + slot * i + (slot - bw) / 2;
+    const bh = (val / max) * (h - padB - padT);
+    const y = h - padB - bh;
+    ctx.fillStyle = CLASS_COLORS[c];
+    ctx.fillRect(x, y, bw, bh);
+    // valoare deasupra barei
+    ctx.fillStyle = '#e8eaf0';
+    ctx.fillText(val, x + bw / 2, y - 4);
+    // eticheta clasa
+    ctx.fillStyle = '#6b7488';
+    ctx.fillText(c, x + bw / 2, h - 6);
+  });
+}
+
+function drawCompareChart(canvas, cMc, cPl) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const padB = 20, padT = 18, padX = 6;
+  const all = [...CLASSES.map(c => cMc[c]), ...CLASSES.map(c => cPl[c])];
+  const max = Math.max(1, ...all);
+  const n = CLASSES.length;
+  const slot = (w - padX * 2) / n;
+  const bw = slot * 0.30;
+  const gap = slot * 0.06;
+
+  ctx.font = '10px "Space Mono", monospace';
+  ctx.textAlign = 'center';
+
+  CLASSES.forEach((c, i) => {
+    const base = padX + slot * i + (slot - (bw * 2 + gap)) / 2;
+    const pairs = [[cMc[c], '#3b82f6'], [cPl[c], '#f59e0b']];
+    pairs.forEach(([val, color], j) => {
+      const x = base + j * (bw + gap);
+      const bh = (val / max) * (h - padB - padT);
+      const y = h - padB - bh;
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, bw, bh);
+      ctx.fillStyle = '#e8eaf0';
+      ctx.fillText(val, x + bw / 2, y - 4);
+    });
+    ctx.fillStyle = '#6b7488';
+    ctx.fillText(c, padX + slot * i + slot / 2, h - 6);
+  });
+}
+
+// ── redesenare grafice la resize (canvas e raster) ─────────────────────────
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (lastSingleData) {
+      const counts = {};
+      lastSingleData.iga.breakdown.forEach(b => counts[b.class] = b.count);
+      drawHistogram(histCanvas, counts);
+    } else if (lastCompareData) {
+      const cMc = {}, cPl = {};
+      CLASSES.forEach(c => { cMc[c] = 0; cPl[c] = 0; });
+      lastCompareData.multiclass.iga.breakdown.forEach(b => cMc[b.class] = b.count);
+      lastCompareData.pipeline.iga.breakdown.forEach(b => cPl[b.class] = b.count);
+      drawCompareChart(cmpCanvas, cMc, cPl);
+    }
+  }, 150);
+});
+
+// ── utilitare ──────────────────────────────────────────────────────────────
+function setLoading(on) {
+  btnAnalyze.disabled = on;
+  spinner.style.display = on ? 'block' : 'none';
+  btnText.textContent = on ? 'Se analizează...' : 'Analizează';
+}
+
+function showError(msg) {
+  errorMsg.textContent = msg;
+  errorMsg.style.display = 'block';
+}
+
+function hideError() {
+  errorMsg.style.display = 'none';
+}
+
+function getCookie(name) {
+  const val = `; ${document.cookie}`;
+  const parts = val.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+  return '';
+}
+</script>
+
+</body>
+</html>
