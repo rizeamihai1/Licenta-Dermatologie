@@ -21,6 +21,7 @@ Soluția este modularizată în patru componente principale, fiecare având prop
 ## Fluxul de Lucru (Pipeline)
 
 1. **Curățarea și Împărțirea Datelor:** Rularea scriptului de prevenire a data leakage-ului pentru obținerea seturilor train/val/test.
+   Setul de date rezultat se poate gasii pe Google Drive la urmatorul link: https://drive.google.com/drive/folders/1sFv92JaBFlQRYv0s_reEKDpyfrg2UWyW
 2. **Augmentarea:** Echilibrarea setului de antrenare prin inserarea inteligentă a leziunilor subreprezentate.
 3. **Detecția:** Antrenarea modelului YOLOv8m pentru a localiza leziunile pe întreaga imagine facială.
 4. **Clasificarea:** Extragerea detecțiilor și trecerea lor prin modelul EfficientNet-B0 pentru o clasificare precisă a tipului de leziune.
