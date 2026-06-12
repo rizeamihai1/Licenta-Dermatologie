@@ -1,4 +1,4 @@
-# Sistem Automat de Detecție și Clasificare a Leziunilor Acneice
+# DETECȚIA ȘI CLASIFICAREA LEZIUNILOR ACNEICE PRIN VIZIUNE ARTIFICIALĂ
 
 Acest repository conține întregul pipeline de cercetare și dezvoltare pentru un sistem capabil să detecteze și să clasifice leziunile acneice din imagini faciale. Proiectul abordează provocări specifice analizei imaginilor medicale, precum dezechilibrul claselor, variabilitatea morfologică și riscul de scurgere a datelor (data leakage).
 
